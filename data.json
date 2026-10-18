@@ -130,5 +130,17 @@
   "floors": "",
   "hoa": "no",
   "notes": "Casa de 1960, 1,080 sqft, cocina y baños renovados, lote de 0.16 acres. Bajó $10K (8 oct)."
+ },
+ {
+  "id": "b8e57759",
+  "url": "https://www.zillow.com/homedetails/128-Mark-Ln-SE-Smyrna-GA-30082/2070157231_zpid/",
+  "addr": "128 Mark Ln SE, Smyrna, GA 30082",
+  "img": "https://photos.zillowstatic.com/fp/3ef2a4ba228b9cd017704010b647b13b-cc_ft_1536.jpg",
+  "price": "$349,000",
+  "beds": "4",
+  "baths": "2",
+  "floors": "",
+  "hoa": "",
+  "notes": ""
  }
 ]
