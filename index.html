@@ -1,0 +1,169 @@
+<!DOCTYPE html>
+<html lang="es"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Casas para mis papás</title>
+<style>
+:root{--bg:#f6f5f2;--card:#fff;--tx:#1d1d1b;--mut:#6b6b66;--bd:#e2e0da;--ac:#2f6f4f;--bad:#c0392b}
+@media(prefers-color-scheme:dark){:root{--bg:#161614;--card:#222220;--tx:#f0efe9;--mut:#9a9a92;--bd:#38382f;--ac:#6fbf94;--bad:#ee7b6c}}
+*{box-sizing:border-box}body{margin:0;font:15px system-ui,sans-serif;background:var(--bg);color:var(--tx);padding:16px;max-width:960px;margin:auto}
+h1{margin:0 0 12px;font-size:22px}
+.bar{display:flex;gap:8px;margin-bottom:6px;flex-wrap:wrap}.bar input{flex:1;min-width:220px}
+input,select,textarea,button{font:inherit;padding:8px 10px;border:1px solid var(--bd);border-radius:8px;background:var(--card);color:var(--tx)}
+button{cursor:pointer}button.p{background:var(--ac);color:#fff;border-color:var(--ac)}
+#st{color:var(--mut);font-size:13px;min-height:18px;margin-bottom:10px}
+.card{display:flex;gap:14px;border:1px solid var(--bd);border-radius:12px;padding:10px;background:var(--card);margin-bottom:12px}
+.img{width:220px;height:150px;border-radius:8px;object-fit:cover;background:var(--bd);flex:none;display:flex;align-items:center;justify-content:center;color:var(--mut);font-size:13px}
+.info{flex:1;min-width:0}
+.addr{font-size:20px;font-weight:700;color:var(--tx);text-decoration:none;display:block;line-height:1.25}
+.addr:hover{color:var(--ac);text-decoration:underline}
+.src{font-size:13px;color:var(--ac)}
+.price{font-size:22px;color:var(--ac);font-weight:700;margin:4px 0}
+.meta{color:var(--mut);font-size:14px}.hs{color:var(--bad)}.hn{color:var(--ac)}
+.note{margin-top:4px;font-size:13px;color:var(--mut)}
+.row{display:flex;gap:6px;margin-top:8px}.row button{padding:3px 9px;font-size:12px}
+dialog{border:1px solid var(--bd);border-radius:12px;background:var(--card);color:var(--tx);max-width:420px;width:92%}
+dialog label{display:block;margin:6px 0 2px;font-size:13px;color:var(--mut)}dialog input,dialog select,dialog textarea{width:100%}
+@media(max-width:600px){.card{flex-direction:column}.img{width:100%;height:190px}}
+</style></head><body>
+<h1>🏠 Casas para mis papás</h1>
+<div class="bar"><input id="u" placeholder="Pega un link de Zillow, Redfin, Realtor o Move with Momentum"><button class="p" onclick="addUrl()">Agregar</button>
+<select id="sort" onchange="render()"><option value="">Orden original</option><option value="asc">Precio ↑</option><option value="desc">Precio ↓</option></select><button onclick="cfgOpen()" title="Sincronización">⚙️</button><button id="sv" class="p" onclick="push()">☁️ Guardar</button></div>
+<div id="st"></div><div id="list"></div>
+
+<dialog id="cfg"><form method="dialog" onsubmit="return false">
+<b>Sincronizar con GitHub</b>
+<label>Repositorio (usuario/repo)</label><input id="c_repo" placeholder="miusuario/casas">
+<label>Token de GitHub (permiso Contents: Read and write, solo para ese repo)</label><input id="c_token" type="password" placeholder="github_pat_...">
+<label>Archivo de datos</label><input id="c_path">
+<label>Rama</label><input id="c_branch">
+<div class="note">El token se guarda solo en este navegador. Cada compu que quiera guardar cambios lo pega una vez. Sin token, la página solo puede leer.</div>
+<div class="row" style="margin-top:12px"><button class="p" onclick="cfgSave()">Guardar y recargar</button><button onclick="cfg_.close()">Cancelar</button></div>
+</form></dialog>
+<dialog id="dlg"><form method="dialog" onsubmit="return false">
+<b>Editar casa</b>
+<label>Dirección</label><input id="f_addr">
+<label>URL de la foto (clic derecho en la foto → copiar dirección de imagen)</label><input id="f_img">
+<label>Precio</label><input id="f_price" placeholder="$350,000">
+<label>Habitaciones</label><input id="f_beds"><label>Baños</label><input id="f_baths">
+<label>Pisos</label><input id="f_floors"><label>HOA</label>
+<select id="f_hoa"><option value="">Desconocido</option><option value="no">No tiene</option><option value="si">Sí tiene</option></select>
+<label>Notas</label><textarea id="f_notes" rows="2"></textarea>
+<div class="row" style="margin-top:12px"><button class="p" onclick="saveEdit()">Guardar</button><button onclick="dlg.close()">Cancelar</button></div>
+</form></dialog>
+
+<script>
+const Z="https://photos.zillowstatic.com/fp/",R="https://ssl.cdn-redfin.com/photo/82/mbpaddedwide/",M="https://dvvjkgh94f2v6.cloudfront.net/4425a693/";
+const SEED=[
+["https://www.zillow.com/homedetails/3366-Woodview-Dr-SE-Smyrna-GA-30082/14295974_zpid/","3366 Woodview Dr SE, Smyrna, GA 30082",Z+"3558deea7524064ba938d8423d81a858-cc_ft_960.jpg","$325,000","3","1","1","no","Casa de ladrillo de 1962, sótano sin terminar con garaje. Bajó $15K en agosto."],
+["https://www.redfin.com/GA/Smyrna/239-Hurt-Rd-SW-30082/home/25414619","239 Hurt Rd SW, Smyrna, GA 30082",R+"105/genMid.7828105_3.jpg","$335,000","3","2","1","no","Ladrillo, cocina remodelada, patio grande con cerca. Publicada hace pocos días."],
+["https://www.realtor.com/realestateandhomes-detail/2554-Gordon-Cir-SE_Smyrna_GA_30080_M60721-29769","2554 Gordon Cir SE, Smyrna, GA 30080","","","","","","","Realtor.com bloquea la lectura automática. Usa ✏️ Editar para completar los datos."],
+["https://www.redfin.com/GA/Smyrna/2880-Hall-Dr-SE-30082/home/25296225","2880 Hall Dr SE, Smyrna, GA 30082",R+"639/genMid.7808639_3.jpg","$299,800","2","1","1","no","Rancho de 912 sqft (1955), techo nuevo, bodega en el patio."],
+["https://www.zillow.com/homedetails/3444-Peachcrest-Trce-Decatur-GA-30032/14459310_zpid/","3444 Peachcrest Trce, Decatur, GA 30032",Z+"f4898a4fa4702ccba2be11fc6ed099e1-cc_ft_960.jpg","$289,900","3","2","1","si","HOA de $100 al año. Rancho de 1991 con garaje y lavadora/secadora incluidas."],
+["https://www.zillow.com/homedetails/1375-Farmers-Loop-Lot-18-Austell-GA-30106/464303926_zpid/","1375 Farmers Loop Lot 18, Austell, GA 30106",Z+"86c180ea0dde3c8aa930c8390ff255f5-cc_ft_960.jpg","$339,990","3","2.5","2","","Townhouse nuevo (Century Communities), 2,214 sqft. HOA no aparece en el listado, preguntar al constructor."],
+["https://movewithmomentum.com/listings/idx-gamls/640-kennesaw-drive-smyrna","640 Kennesaw Dr, Smyrna, GA 30080",M+"67b47de44d625637a14439bc21961dd9/83dcefb7.jpeg","$300,000","3","1","1","no","Rancho de ladrillo en esquina, 1,176 sqft. Se vende tal cual. Bajó $10K (8 oct)."],
+["https://movewithmomentum.com/listings/idx-gamls/6005-pat-mell-place-smyrna","6005 Pat Mell Pl, Smyrna, GA 30080",M+"02e350e3aee2d3bcc4986c88f8a3eb71/83dcefb7.jpeg","$210,000","2","2.5","","no","Townhouse de 1984, techo nuevo y deck nuevo. El listado dice sin HOA (confirmar). 78 días en mercado."],
+["https://movewithmomentum.com/listings/idx-gamls/1892-cooper-landing-drive-smyrna","1892 Cooper Landing Dr, Smyrna, GA 30080",M+"94325cf39cf3df386919b55bd74b8997/83dcefb7.jpeg","$315,000","2","2","","","Townhouse de 1983, 1,296 sqft. HOA no reportada en el listado (confirmar)."],
+["https://movewithmomentum.com/listings/idx-gamls/304-bridge-lane-smyrna","304 Bridge Ln, Smyrna, GA 30082",M+"ddb6b661e450b9b0f0bbabc10d449708/83dcefb7.jpeg","$159,900","2","2.5","","","Condo/townhouse con piscina comunitaria, así que probablemente tiene HOA (confirmar). 123 días en mercado."],
+["https://movewithmomentum.com/listings/idx-gamls/2815-old-concord-road-smyrna","2815 Old Concord Rd, Smyrna, GA 30082",M+"00ca58761e4431fea93e399e6c86bfda/83dcefb7.jpeg","$339,900","3","2","","no","Casa de 1960, 1,080 sqft, cocina y baños renovados, lote de 0.16 acres. Bajó $10K (8 oct)."]
+];
+const $=id=>document.getElementById(id),KEY="casas_v2";
+let houses=[],editing=null;
+try{houses=JSON.parse(localStorage.getItem(KEY)||"null")||[]}catch(e){}
+const save=()=>{try{localStorage.setItem(KEY,JSON.stringify(houses))}catch(e){}dirty=true;mark()};
+let cfg={repo:"",token:"",path:"data.json",branch:"main"},sha=null,dirty=false;
+try{Object.assign(cfg,JSON.parse(localStorage.getItem("casas_cfg")||"{}"))}catch(e){}
+if(!cfg.repo&&/github\.io$/.test(location.hostname)){const r=location.pathname.split("/")[1];if(r)cfg.repo=location.hostname.split(".")[0]+"/"+r}
+const cfg_=document.getElementById("cfg");
+const gh=()=>`https://api.github.com/repos/${cfg.repo}/contents/${cfg.path}`;
+const hd=()=>({Accept:"application/vnd.github+json",...(cfg.token?{Authorization:"Bearer "+cfg.token}:{})});
+const mark=()=>{const b=document.getElementById("sv");if(b)b.textContent=dirty&&cfg.repo?"☁️ Guardar cambios *":"☁️ Guardar"};
+function cfgOpen(){["repo","token","path","branch"].forEach(k=>document.getElementById("c_"+k).value=cfg[k]||"");cfg_.showModal()}
+function cfgSave(){["repo","token","path","branch"].forEach(k=>cfg[k]=document.getElementById("c_"+k).value.trim());
+ try{localStorage.setItem("casas_cfg",JSON.stringify(cfg))}catch(e){}location.reload()}
+async function pull(){
+ try{const r=await fetch(gh()+"?ref="+cfg.branch+"&t="+Date.now(),{headers:hd()});
+  if(r.status===404){$("st").textContent="Aún no existe "+cfg.path+" en el repo. Pulsa ☁️ Guardar para crearlo con las casas actuales.";return false}
+  if(!r.ok)throw 0;
+  const j=await r.json();sha=j.sha;
+  houses=JSON.parse(decodeURIComponent(escape(atob(j.content.replace(/\n/g,"")))));
+  try{localStorage.setItem(KEY,JSON.stringify(houses))}catch(e){}
+  return true}catch(e){$("st").textContent="No pude leer de GitHub, uso la copia local.";return false}}
+async function push(){
+ if(!cfg.repo||!cfg.token){cfgOpen();return}
+ $("st").textContent="Guardando en GitHub…";
+ try{const body={message:"Actualizar casas",branch:cfg.branch,content:btoa(unescape(encodeURIComponent(JSON.stringify(houses,null,1))))};
+  if(sha)body.sha=sha;
+  const r=await fetch(gh(),{method:"PUT",headers:hd(),body:JSON.stringify(body)});
+  if(r.status===409||r.status===422){$("st").textContent="Alguien guardó cambios antes que tú. Recarga la página para ver lo último (tus cambios sin guardar se perderían).";return}
+  if(!r.ok)throw 0;
+  sha=(await r.json()).content.sha;dirty=false;mark();$("st").textContent="Guardado en GitHub ✔"}
+ catch(e){$("st").textContent="No se pudo guardar. Revisa repo, rama y token en ⚙️."}}
+window.onbeforeunload=e=>{if(dirty&&cfg.repo&&cfg.token)e.preventDefault()};
+const mk=(url,addr,img,price,beds,baths,floors,hoa,notes)=>({id:Math.random().toString(36).slice(2),url,addr:addr||addrFromUrl(url),img:img||"",price:price||"",beds:beds||"",baths:baths||"",floors:floors||"",hoa:hoa||"",notes:notes||""});
+const tc=s=>s.replace(/\b\w/g,c=>c.toUpperCase());
+const site=u=>{try{return new URL(u).host.replace("www.","")}catch(e){return u}};
+const num=p=>parseInt((p||"").replace(/\D/g,""))||null;
+function addrFromUrl(u){try{const p=new URL(u),path=decodeURIComponent(p.pathname);
+ if(/zillow/.test(p.host))return path.split("/")[2].replace(/-/g," ").replace(/ ([A-Z]{2}) (\d{5})$/,", $1 $2");
+ if(/redfin/.test(p.host)){const[,st,city,a]=path.split("/");const z=a.match(/-(\d{5})$/);return `${a.replace(/-\d{5}$/,"").replace(/-/g," ")}, ${city.replace(/-/g," ")}, ${st}${z?" "+z[1]:""}`}
+ if(/realtor/.test(p.host)){const s=path.split("/").pop().split("_");return `${s[0].replace(/-/g," ")}, ${s[1]}, ${s[2]} ${s[3]}`}
+ if(/movewithmomentum/.test(p.host))return tc(path.split("/").pop().replace(/-/g," "))+", GA";
+}catch(e){}return u}
+
+async function addUrl(){
+ const v=$("u").value.trim();if(!v)return;
+ const url=v.split("?")[0];
+ if(houses.some(h=>h.url===url)){$("st").textContent="Ese link ya está en la lista.";return}
+ const h=mk(url);houses.push(h);$("u").value="";save();render();
+ $("st").textContent="Intentando leer "+site(url)+"…";
+ const ok=await parse(h);save();render();
+ if(ok){$("st").textContent="Listo. Revisa los datos con ✏️ Editar si algo falta."}
+ else{$("st").textContent="No pude leer esa página automáticamente (los portales bloquean a los navegadores). Completa los datos con ✏️ Editar, o pídeme a mí que los llene.";edit(h.id)}
+}
+async function parse(h){
+ const px=[u=>"https://api.allorigins.win/raw?url="+encodeURIComponent(u),u=>"https://corsproxy.io/?"+encodeURIComponent(u)];
+ for(const f of px){try{
+  const c=new AbortController();setTimeout(()=>c.abort(),12000);
+  const r=await fetch(f(h.url),{signal:c.signal});if(!r.ok)continue;
+  const t=await r.text();if(t.length<2000||/captcha|Access Denied/i.test(t.slice(0,6000)))continue;
+  const d=new DOMParser().parseFromString(t,"text/html");
+  const m=n=>(d.querySelector(`meta[property="${n}"],meta[name="${n}"]`)||{}).content||"";
+  const tx=m("og:title")+" "+m("og:description")+" "+m("description")+" "+d.title;
+  h.img=h.img||m("og:image");
+  const pr=tx.match(/\$\s?[\d,]{5,}/);if(pr)h.price=pr[0];
+  const b=tx.match(/(\d+)\s*(?:beds?|bd|bedrooms?)/i);if(b)h.beds=b[1];
+  const ba=tx.match(/([\d.]+)\s*(?:baths?|ba|bathrooms?)/i);if(ba)h.baths=ba[1];
+  const body=d.body?d.body.textContent:"";
+  const st=body.match(/Stories:\s*(\d)/i);if(st)h.floors=st[1];
+  if(/Has HOA:\s*No|no HOA|No homeowners association/i.test(body))h.hoa="no";else if(/Has HOA:\s*Yes/i.test(body))h.hoa="si";
+  return !!(h.price||h.img);
+ }catch(e){}}
+ return false}
+
+function card(h){
+ const hoa=h.hoa==="si"?'<span class="hs">HOA: Sí</span>':h.hoa==="no"?'<span class="hn">Sin HOA</span>':"HOA: ?";
+ const img=h.img?`<img class="img" src="${h.img}" referrerpolicy="no-referrer" onerror="this.outerHTML='<div class=img>Sin foto</div>'">`:'<div class="img">Sin foto</div>';
+ const q=x=>x||"?";
+ return `<div class="card">${img}<div class="info">
+ <a class="addr" target="_blank" href="https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(h.addr)}">${h.addr}</a>
+ <a class="src" target="_blank" href="${h.url}">${site(h.url)} ↗</a>
+ <div class="price">${h.price||"Precio ?"}</div>
+ <div class="meta">🛏 ${q(h.beds)} hab · 🛁 ${q(h.baths)} baños · 🏢 ${q(h.floors)} ${h.floors==1?"piso":"pisos"} · ${hoa}</div>
+ ${h.notes?`<div class="note">${h.notes}</div>`:""}
+ <div class="row"><button onclick="edit('${h.id}')">✏️ Editar</button><button onclick="del('${h.id}')">🗑 Borrar</button></div>
+ </div></div>`}
+function render(){
+ let l=[...houses];const s=$("sort").value;
+ if(s)l.sort((a,b)=>((num(a.price)??1e12)-(num(b.price)??1e12))*(s==="asc"?1:-1));
+ $("list").innerHTML=l.map(card).join("")}
+function del(id){if(confirm("¿Borrar esta casa?")){houses=houses.filter(h=>h.id!==id);save();render()}}
+const F=["addr","img","price","beds","baths","floors","hoa","notes"];
+function edit(id){editing=houses.find(x=>x.id===id);F.forEach(f=>$("f_"+f).value=editing[f]||"");$("dlg").showModal()}
+function saveEdit(){F.forEach(f=>editing[f]=$("f_"+f).value.trim());save();render();$("dlg").close()}
+
+(async()=>{
+ if(cfg.repo)await pull();
+ if(!houses.length){houses=SEED.map(s=>mk(...s));save()}
+ render();mark();
+})();
+</script></body></html>
