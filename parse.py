@@ -61,8 +61,13 @@ def fetch_browser(url):
     bad = re.compile(r"px-captcha|Access Denied|press\s*(?:&|and)\s*hold|are you a robot", re.I)
     html, warned = "", False
     with sync_playwright() as p:
-        b = p.chromium.launch(headless=False)  # ventana visible: los portales detectan menos
-        pg = b.new_page()
+        prof = str(Path(__file__).with_name(".browser-profile"))  # guarda cookies para que el portal te recuerde
+        opts = dict(headless=False, viewport=None, args=["--disable-blink-features=AutomationControlled"])
+        try:
+            b = p.chromium.launch_persistent_context(prof, channel="chrome", **opts)  # tu Chrome real
+        except Exception:
+            b = p.chromium.launch_persistent_context(prof, **opts)
+        pg = b.pages[0] if b.pages else b.new_page()
         pg.goto(url, wait_until="domcontentloaded", timeout=45000)
         for _ in range(45):  # espera hasta ~90 s por si hay que resolver un captcha
             pg.wait_for_timeout(2000)
@@ -197,7 +202,7 @@ def main():
         print(f"   ✓ {h['addr']} | {h.get('price') or '?'} | {h.get('beds') or '?'}hab {h.get('baths') or '?'}ba"
               + (f" | falta: {', '.join(missing)}" if missing else ""))
         save(houses)
-        time.sleep(2)
+        time.sleep(6 if a.browser else 2)
     if fails:
         print("\nNo se pudieron leer:\n  " + "\n  ".join(fails))
         print("Prueba con --browser, o guarda la página (Ctrl+S) y usa --html archivo.html")
