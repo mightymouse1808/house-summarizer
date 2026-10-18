@@ -58,15 +58,23 @@ def fetch(url):
 
 def fetch_browser(url):
     from playwright.sync_api import sync_playwright
+    bad = re.compile(r"px-captcha|Access Denied|press\s*(?:&|and)\s*hold|are you a robot", re.I)
+    html, warned = "", False
     with sync_playwright() as p:
         b = p.chromium.launch(headless=False)  # ventana visible: los portales detectan menos
         pg = b.new_page()
         pg.goto(url, wait_until="domcontentloaded", timeout=45000)
-        pg.wait_for_timeout(4000)
-        html = pg.content()
+        for _ in range(45):  # espera hasta ~90 s por si hay que resolver un captcha
+            pg.wait_for_timeout(2000)
+            html = pg.content()
+            if len(html) > 20000 and not bad.search(html[:20000]):
+                break
+            if not warned:
+                print("   ! El portal pide verificacion. Resuelvela en la ventana del navegador (tienes ~90 segundos)...")
+                warned = True
         b.close()
-    if re.search(r"px-captcha|Access Denied", html[:8000], re.I):
-        raise Blocked("el portal pidió captcha; resuélvelo en la ventana y reintenta")
+    if bad.search(html[:20000]):
+        raise Blocked("no se paso la verificacion a tiempo")
     return html
 
 def meta(soup, *names):
