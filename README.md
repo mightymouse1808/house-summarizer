@@ -1,4 +1,4 @@
-# Casas para mis papás
+# Resumidor de casas
 Open source webpage meant to help keep track of house-search-related information 
 
 Contenido de la carpeta:
