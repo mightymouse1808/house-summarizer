@@ -72,6 +72,11 @@ def fetch_browser(url):
             if not warned:
                 print("   ! El portal pide verificacion. Resuelvela en la ventana del navegador (tienes ~90 segundos)...")
                 warned = True
+        if not bad.search(html[:20000]):
+            for _ in range(10):  # baja la pagina para que carguen las secciones de abajo (pisos, HOA)
+                pg.mouse.wheel(0, 2500)
+                pg.wait_for_timeout(700)
+            html = pg.content()
         b.close()
     if bad.search(html[:20000]):
         raise Blocked("no se paso la verificacion a tiempo")
