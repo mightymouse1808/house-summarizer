@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="es"><head><meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Resumidor de Casas</title>
+<title>House Summarizer</title>
 <style>
 :root{--bg:#f6f5f2;--card:#fff;--tx:#1d1d1b;--mut:#6b6b66;--bd:#e2e0da;--ac:#2f6f4f;--bad:#c0392b}
 @media(prefers-color-scheme:dark){:root{--bg:#161614;--card:#222220;--tx:#f0efe9;--mut:#9a9a92;--bd:#38382f;--ac:#6fbf94;--bad:#ee7b6c}}
@@ -25,9 +25,9 @@ dialog{border:1px solid var(--bd);border-radius:12px;background:var(--card);colo
 dialog label{display:block;margin:6px 0 2px;font-size:13px;color:var(--mut)}dialog input,dialog select,dialog textarea{width:100%}
 @media(max-width:600px){.card{flex-direction:column}.img{width:100%;height:190px}}
 </style></head><body>
-<h1>🏠 Casas para mis papás</h1>
+<h1>🏠 Resumidor de Casas</h1>
 <div class="bar"><input id="u" placeholder="Pega un link de Zillow, Redfin, Realtor o Move with Momentum"><button class="p" onclick="addUrl()">Agregar</button>
-<select id="sort" onchange="render()"><option value="">Orden original</option><option value="asc">Precio ↑</option><option value="desc">Precio ↓</option></select><button onclick="cfgOpen()" title="Sincronización">⚙️</button><button id="sv" class="p" onclick="push()">☁️ Guardar</button></div>
+<select id="sort" onchange="render()"><option value="">Orden original</option><option value="asc">Precio ↓</option><option value="desc">Precio ↑</option></select><button onclick="cfgOpen()" title="Sincronización">⚙️</button><button id="sv" class="p" onclick="push()">☁️ Guardar</button></div>
 <div id="st"></div><div id="list"></div>
 
 <dialog id="cfg"><form method="dialog" onsubmit="return false">
